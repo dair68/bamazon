@@ -1,6 +1,7 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
 const cTable = require('console.table');
+var numProducts = 0;
 
 //connecting to sql database
 var connection = mysql.createConnection({
@@ -27,6 +28,7 @@ function displayProducts() {
             throw err;
         }
 
+        numProducts = res.length;
         console.table("Inventory", res);
         selectProduct();
     });
@@ -38,7 +40,14 @@ function selectProduct() {
         {
             type: "input",
             name: "productID",
-            message: "Input ID of item you wish to purchase:"
+            message: "Input ID of item you wish to purchase:",
+            validate: function(input) {
+                if(Number.isInteger(parseFloat(input)) && 1 <= input && input <= numProducts) {
+                    return true;
+                }
+
+                console.log(" Invalid ID");
+            }
         }
     ]).then(function(answers) {
         console.log(answers.productID);
@@ -66,7 +75,14 @@ function selectQuantity(id) {
         {
             type: "input",
             name: "quantity",
-            message: "Input quantity:"
+            message: "Input quantity:",
+            validate: function(input) {
+                if(Number.isInteger(parseFloat(input)) && input >= 0) {
+                    return true;
+                }
+
+                console.log(" Invalid quantity");
+            }
         }
     ]).then(function(answers) {
         console.log(answers.quantity);
