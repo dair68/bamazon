@@ -23,7 +23,7 @@ connection.connect(function (err) {
 
 //prints the data for all the products for sale to the console
 function displayProducts() {
-    connection.query("SELECT * FROM products", function (err, res) {
+    connection.query("SELECT item_id, product_name, price FROM products", function (err, res) {
         if (err) {
             throw err;
         }
@@ -50,7 +50,7 @@ function selectProduct() {
             }
         }
     ]).then(function(answers) {
-        console.log(answers.productID);
+        //console.log(answers.productID);
         obtainProduct(answers.productID);
     });
 }
@@ -64,7 +64,7 @@ function obtainProduct(id) {
             throw err;
         }
 
-        console.table(res);
+        //console.table(res);
         selectQuantity(id);
     });
 }
@@ -85,7 +85,7 @@ function selectQuantity(id) {
             }
         }
     ]).then(function(answers) {
-        console.log(answers.quantity);
+        //console.log(answers.quantity);
         sellProduct(id, answers.quantity);
     });
 }
