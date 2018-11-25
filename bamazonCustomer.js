@@ -17,7 +17,7 @@ connection.connect(function (err) {
     if (err) {
         throw err;
     }
-    console.log("connected as id " + connection.threadId + "\n");
+    console.log("connected as id " + connection.threadId);
     displayProducts();
 });
 
@@ -29,7 +29,7 @@ function displayProducts() {
         }
 
         numProducts = res.length;
-        console.table("Inventory", res);
+        console.table("\nInventory", res);
         selectProduct();
     });
 }
@@ -39,92 +39,83 @@ function selectProduct() {
     inquirer.prompt([
         {
             type: "input",
-            name: "productID",
+            name: "id",
             message: "Input ID of item you wish to purchase:",
-            validate: function(input) {
-                if(Number.isInteger(parseFloat(input)) && 1 <= input && input <= numProducts) {
+            validate: function (input) {
+                if (Number.isInteger(parseFloat(input)) && 1 <= input && input <= numProducts) {
                     return true;
                 }
 
                 console.log(" Invalid ID");
             }
-        }
-    ]).then(function(answers) {
-        //console.log(answers.productID);
-        obtainProduct(answers.productID);
-    });
-}
-
-//obtains a product based on it's id
-function obtainProduct(id) {
-    connection.query("SELECT * FROM products WHERE item_id=?", id, 
-    function(err, res) {
-        //error occurs
-        if(err) {
-            throw err;
-        }
-
-        //console.table(res);
-        selectQuantity(id);
-    });
-}
-
-//lets user select quantity of items to buy for a certain product 
-function selectQuantity(id) {
-    inquirer.prompt([
+        },
         {
             type: "input",
             name: "quantity",
             message: "Input quantity:",
-            validate: function(input) {
-                if(Number.isInteger(parseFloat(input)) && input >= 0) {
+            validate: function (input) {
+                if (Number.isInteger(parseFloat(input)) && input >= 0) {
                     return true;
                 }
 
                 console.log(" Invalid quantity");
             }
         }
-    ]).then(function(answers) {
-        //console.log(answers.quantity);
-        sellProduct(id, answers.quantity);
+    ]).then(function (answers) {
+        var id = answers.id;
+        var quantity = answers.quantity;
+
+        sellProduct(id, quantity);
     });
 }
 
 //sells product, if there is enough stock
 function sellProduct(id, quantity) {
-    connection.query("SELECT * FROM products WHERE item_id=?", id, 
-    function(err, res) {
-        //error occurs
-        if(err) {
-            throw err;
-        }
+    connection.query("SELECT product_name, price, stock_quantity FROM products WHERE item_id=?", id,
+        function (err, res) {
+            //error occurs
+            if (err) {
+                throw err;
+            }
 
-        //console.log(res);
-        var stock = res[0].stock_quantity;
-        var price = res[0].price
+            //console.log(res);
+            var item = res[0].product_name;
+            var price = res[0].price;
+            var stock = res[0].stock_quantity;
 
-        //out of stock
-        if(quantity > stock) {
-            console.log(stock);
-            console.log("Insufficient quantity! Order canceled.");
-            //connection.end();
-            orderAgain();
-        }
-        //enough in stock
-        else {
-            var query = "UPDATE products SET stock_quantity=? WHERE item_id=?"
-            connection.query(query,[stock - quantity, id], function(err, res) {
-                //error occurs
-                if(err) {
-                    throw err;
-                }
-
-                var total = price * quantity;
-                console.log("Order successful! Your total is $" + total);
+            //out of stock
+            if (quantity > stock) {
+                //console.log(stock);
+                console.log("Insufficient quantity! Order canceled.\n");
                 orderAgain();
-            });
-        }
-    }); 
+            }
+            //enough in stock
+            else {
+                var query = "UPDATE products SET stock_quantity=? WHERE item_id=?"
+                connection.query(query, [stock - quantity, id], function (err, res) {
+                    //error occurs
+                    if (err) {
+                        throw err;
+                    }
+
+                    var total = price * quantity;
+
+                    //purchased one item
+                    if (parseInt(quantity) === 1) {
+                        console.log("Order successful! Purchased " + item + ".");
+
+                    }
+                    //purchased multiple items
+                    else {
+                        console.log("Order successful! Purchased " + quantity + " of " + item);
+                    }
+                    console.log("Your total is $" + total);
+                    console.log("\n");
+
+                    orderAgain();
+                });
+            }
+        });
 }
 
 //asks user if they want to make another purchase. exits app if not.
@@ -135,14 +126,14 @@ function orderAgain() {
             name: "buyAgain",
             message: "Make another purchase?",
         }
-    ]).then(function(answers) {
+    ]).then(function (answers) {
         //user will make another purchase
-        if(answers.buyAgain) {
+        if (answers.buyAgain) {
             displayProducts();
         }
         //user will not make anymore purchases
         else {
-            console.log("Thank you for shopping at Walmart.");
+            console.log("Thanks for stopping by the back alley.");
             connection.end();
         }
     });

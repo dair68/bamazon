@@ -96,7 +96,7 @@ function restock() {
             message: "Input quantity:"
         }
     ]).then(function(answers) {
-        console.log(answers);
+        //console.log(answers);
         var query = "UPDATE products SET stock_quantity=? WHERE item_id=?";
         var quantity = answers.quantity;
         var id = answers.id;
@@ -153,7 +153,7 @@ function addNewProduct() {
                 throw err;
             }
 
-            console.log(res);
+            //console.log(res);
             returnToMenu();
         });
     });
