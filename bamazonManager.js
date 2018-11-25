@@ -4,25 +4,25 @@ const cTable = require("console.table");
 var numProducts = 0;
 
 var connection = mysql.createConnection({
-    host:"localhost",
-    port:3306,
+    host: "localhost",
+    port: 3306,
     user: "root",
     password: "",
     database: "shopDB"
 });
 
-connection.connect(function(err) {
+connection.connect(function (err) {
     //error occurs
-    if(err) {
+    if (err) {
         throw err;
     }
 
     console.log("connected as id " + connection.threadId + "\n");
 
     //obtaining number of rows in table
-    connection.query("SELECT COUNT(*) FROM products", function(err, res) {
+    connection.query("SELECT COUNT(*) FROM products", function (err, res) {
         //error occurs
-        if(err) {
+        if (err) {
             throw err;
         }
 
@@ -30,10 +30,8 @@ connection.connect(function(err) {
         numProducts = res[0]["COUNT(*)"];
 
         displayMenu();
-    }); 
+    });
 });
-
-
 
 //displays manager menu options and lets user choose from them
 function displayMenu() {
@@ -49,10 +47,10 @@ function displayMenu() {
                 "Add New Product"
             ]
         }
-    ]).then(function(answers) {
+    ]).then(function (answers) {
         //console.log(answers);
 
-        switch(answers.action) {
+        switch (answers.action) {
             case "View Products for Sale":
                 viewProducts();
                 break;
@@ -71,27 +69,27 @@ function displayMenu() {
 
 //lists all items and their ids, names, prices, and quantities
 function viewProducts() {
-    connection.query("SELECT item_id, product_name, price, stock_quantity FROM products", function(err, res) {
+    connection.query("SELECT item_id, product_name, price, stock_quantity FROM products", function (err, res) {
         //error occurs
-        if(err) {
+        if (err) {
             throw err;
         }
 
-        console.table("\nInventory",res);
+        console.table("\nInventory", res);
         returnToMenu();
     });
-} 
+}
 
 //lists all items with less than 5 in stock
 function viewLowInventory() {
     var query = "SELECT item_id, product_name, price, stock_quantity FROM products WHERE stock_quantity < 5";
-    connection.query(query, function(err, res) {
+    connection.query(query, function (err, res) {
         //error occurs
-        if(err) {
+        if (err) {
             throw err;
         }
 
-        console.table("\nLow Inventory",res);
+        console.table("\nLow Inventory", res);
         returnToMenu();
     });
 }
@@ -123,12 +121,12 @@ function addToInventory() {
                 console.log(" Invalid quantity");
             }
         }
-    ]).then(function(answers) {
+    ]).then(function (answers) {
         //console.log(answers);
         var query = "UPDATE products SET stock_quantity=? WHERE item_id=?";
         var id = answers.id;
         var numExtraItems = parseInt(answers.numExtraItems);
-        
+
         restock(id, numExtraItems);
     });
 }
@@ -137,9 +135,9 @@ function addToInventory() {
 function restock(id, numExtraItems) {
     //obtaining current quantity of item
     var query1 = "SELECT product_name, stock_quantity FROM products WHERE item_id=?";
-    connection.query(query1, id, function(err, res) {
+    connection.query(query1, id, function (err, res) {
         //error occurs
-        if(err) {
+        if (err) {
             throw err;
         }
 
@@ -149,9 +147,9 @@ function restock(id, numExtraItems) {
 
         //restocking item
         var query2 = "UPDATE products SET stock_quantity=? WHERE item_id=?";
-        connection.query(query2, [currentStock + numExtraItems, id], function(err, res) {
+        connection.query(query2, [currentStock + numExtraItems, id], function (err, res) {
             //error occurs
-            if(err) {
+            if (err) {
                 throw err;
             }
 
@@ -192,23 +190,24 @@ function addNewProduct() {
                 console.log(" Invalid quantity");
             }
         }
-    ]).then(function(answers) {
-        var input = [
-            answers.name,
-            answers.department,
-            answers.price,
-            answers.quantity
-        ];
+    ]).then(function (answers) {
+        var query = "INSERT INTO products SET ?";
 
-        var query1 = "INSERT INTO products(product_name, department_name, price, stock_quantity)";
-        var query2 = "VALUES (?, ?, ?, ?)";
-        connection.query(query1 + query2, input, function(err, res) {
+        var input = {
+            product_name: answers.name,
+            department_name: answers.department,
+            price: answers.price,
+            stock_quantity: answers.quantity
+        };
+
+        connection.query(query, input, function (err, res) {
             //error occurs
-            if(err) {
+            if (err) {
                 throw err;
             }
 
             //console.log(res);
+            console.log("Item added to inventory\n");
             returnToMenu();
         });
     });
@@ -218,12 +217,12 @@ function addNewProduct() {
 function returnToMenu() {
     inquirer.prompt([
         {
-            type:"confirm",
+            type: "confirm",
             name: "return",
             message: "Return to menu?"
         }
-    ]).then(function(answers) {
-        if(answers.return) {
+    ]).then(function (answers) {
+        if (answers.return) {
             console.log("");
             displayMenu();
         }
