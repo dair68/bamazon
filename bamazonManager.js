@@ -1,6 +1,7 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
 const cTable = require("console.table");
+var numProducts = 0;
 
 var connection = mysql.createConnection({
     host:"localhost",
@@ -17,9 +18,22 @@ connection.connect(function(err) {
     }
 
     console.log("connected as id " + connection.threadId + "\n");
-    displayMenu();
 
+    //obtaining number of rows in table
+    connection.query("SELECT COUNT(*) FROM products", function(err, res) {
+        //error occurs
+        if(err) {
+            throw err;
+        }
+
+        //console.log(res);
+        numProducts = res[0]["COUNT(*)"];
+
+        displayMenu();
+    }); 
 });
+
+
 
 //displays manager menu options and lets user choose from them
 function displayMenu() {
@@ -46,7 +60,7 @@ function displayMenu() {
                 viewLowInventory();
                 break;
             case "Add to Inventory":
-                restock();
+                addToInventory();
                 break;
             case "Add New Product":
                 addNewProduct();
@@ -63,7 +77,7 @@ function viewProducts() {
             throw err;
         }
 
-        console.table(res);
+        console.table("\nInventory",res);
         returnToMenu();
     });
 } 
@@ -77,38 +91,72 @@ function viewLowInventory() {
             throw err;
         }
 
-        console.table(res);
+        console.table("\nLow Inventory",res);
         returnToMenu();
     });
 }
 
 //prompts user to restock an item
-function restock() {
+function addToInventory() {
     inquirer.prompt([
         {
             type: "input",
             name: "id",
-            message: "Input product id of item to restock:",
+            message: "Input ID of item to restock:",
+            validate: function (input) {
+                if (Number.isInteger(parseFloat(input)) && 1 <= input && input <= numProducts) {
+                    return true;
+                }
+
+                console.log(" Invalid ID");
+            }
         },
         {
             type: "input",
-            name: "quantity",
-            message: "Input quantity:"
+            name: "numExtraItems",
+            message: "Input number of additional items to purchase:",
+            validate: function (input) {
+                if (Number.isInteger(parseFloat(input)) && input >= 0) {
+                    return true;
+                }
+
+                console.log(" Invalid quantity");
+            }
         }
     ]).then(function(answers) {
         //console.log(answers);
         var query = "UPDATE products SET stock_quantity=? WHERE item_id=?";
-        var quantity = answers.quantity;
         var id = answers.id;
+        var numExtraItems = parseInt(answers.numExtraItems);
+        
+        restock(id, numExtraItems);
+    });
+}
 
-        connection.query(query, [quantity, id], function(err, res) {
+//purchases additional quantities of a specific item
+function restock(id, numExtraItems) {
+    //obtaining current quantity of item
+    var query1 = "SELECT product_name, stock_quantity FROM products WHERE item_id=?";
+    connection.query(query1, id, function(err, res) {
+        //error occurs
+        if(err) {
+            throw err;
+        }
+
+        //console.log(res);
+        var item = res[0].product_name;
+        var currentStock = parseInt(res[0].stock_quantity);
+
+        //restocking item
+        var query2 = "UPDATE products SET stock_quantity=? WHERE item_id=?";
+        connection.query(query2, [currentStock + numExtraItems, id], function(err, res) {
             //error occurs
             if(err) {
                 throw err;
             }
 
             //console.log(res);
-            console.log("Item restocked");
+            console.log(item + " restocked.\n");
             returnToMenu();
         });
     });
@@ -135,7 +183,14 @@ function addNewProduct() {
         {
             type: "input",
             name: "quantity",
-            message: "Quantity:"
+            message: "Quantity:",
+            validate: function (input) {
+                if (Number.isInteger(parseFloat(input)) && input >= 0) {
+                    return true;
+                }
+
+                console.log(" Invalid quantity");
+            }
         }
     ]).then(function(answers) {
         var input = [
@@ -169,6 +224,7 @@ function returnToMenu() {
         }
     ]).then(function(answers) {
         if(answers.return) {
+            console.log("");
             displayMenu();
         }
         else {

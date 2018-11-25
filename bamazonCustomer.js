@@ -110,7 +110,7 @@ function sellProduct(id, quantity) {
                         console.log("Order successful! Purchased " + quantity + " of " + item);
                     }
                     console.log("Your total is $" + total);
-                    console.log("\n");
+                    console.log("");
 
                     orderAgain();
                 });
